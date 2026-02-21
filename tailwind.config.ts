@@ -57,6 +57,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "parking-accent": "hsl(var(--parking-accent))",
       },
       borderRadius: {
         lg: "var(--radius)",
