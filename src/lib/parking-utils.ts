@@ -2,8 +2,7 @@
    Parking Management System — Utility Functions
    ────────────────────────────────────────────── */
 
-import type { ParkingSpace, ParkingConfig, Vehicle, Payment, VehicleType } from "./parking-types";
-import { DEFAULT_CONFIG } from "./parking-types";
+import type { ParkingSpace, ParkingConfig, Vehicle, Payment, VehicleType, RateType } from "./parking-types";
 
 /** Generate a unique ID */
 export const generateId = (): string =>
@@ -23,10 +22,60 @@ export const calcDuration = (entry: string, exit: string): number => {
   return Math.max(1, Math.ceil(diff / 60000));
 };
 
-/** Calculate fee based on duration and vehicle type */
-export const calcFee = (minutes: number, type: VehicleType, config: ParkingConfig): number => {
-  const hours = Math.ceil(minutes / 60);
-  return hours * config.rates[type];
+/**
+ * Calculate fee based on duration, vehicle type, rate type, config, and convenio.
+ *
+ * For "hour" rate:
+ *   - First hour charged from minute 1.
+ *   - Grace period applies after each full hour.
+ *   - hours = max(1, ceil((minutes - gracePeriod) / 60))
+ *
+ * For "day", "night", "24h": flat rate.
+ *
+ * Convenio: discounts 1 hour (never negative).
+ */
+export const calcFee = (
+  minutes: number,
+  type: VehicleType,
+  rateType: RateType,
+  config: ParkingConfig,
+  convenio: boolean = false
+): number => {
+  const rate = config.rates[type][rateType];
+
+  if (rateType !== "hour") {
+    // Flat rates — convenio still discounts 1 hour equivalent
+    if (convenio) {
+      const hourRate = config.rates[type].hour;
+      return Math.max(0, rate - hourRate);
+    }
+    return rate;
+  }
+
+  // Hourly calculation with grace period
+  const grace = config.gracePeriod ?? 5;
+  const hours = Math.max(1, Math.ceil((minutes - grace) / 60));
+  const billableHours = convenio ? Math.max(0, hours - 1) : hours;
+  return billableHours * rate;
+};
+
+/** Validate plate: exactly 6 chars. Car ends in number, moto ends in letter */
+export const validatePlate = (plate: string, type: VehicleType): { valid: boolean; error?: string } => {
+  const p = plate.toUpperCase().trim();
+  if (p.length !== 6) {
+    return { valid: false, error: "La placa debe tener exactamente 6 caracteres" };
+  }
+  const lastChar = p[5];
+  if (type === "motorcycle") {
+    if (!/[A-Z]/.test(lastChar)) {
+      return { valid: false, error: "Placa de moto debe terminar en letra (ej: HOQ79C)" };
+    }
+  } else {
+    if (!/[0-9]/.test(lastChar)) {
+      return { valid: false, error: "Placa de carro/camioneta debe terminar en número (ej: MTV192)" };
+    }
+  }
+  return { valid: true };
 };
 
 /** Format currency */
@@ -114,9 +163,10 @@ export const seedDemoData = (config: ParkingConfig) => {
   const spaces = initSpaces(config);
   const vehicles: Vehicle[] = [];
   const payments: Payment[] = [];
+  const rateTypes: RateType[] = ["hour", "day", "night", "24h"];
 
   // Park a few vehicles
-  const demoPlates = ["ABC123", "XYZ789", "MOT456"];
+  const demoPlates = ["ABC123", "XYZ789", "MOT45C"];
   const demoTypes: VehicleType[] = ["car", "motorcycle", "truck"];
 
   demoPlates.forEach((plate, i) => {
@@ -129,29 +179,34 @@ export const seedDemoData = (config: ParkingConfig) => {
       id: vid,
       plate,
       type,
+      rateType: "hour",
       entryTime,
       spaceId: space.id,
       status: "parked",
       ticketCode: generateTicketCode(),
+      helmetNumber: type === "motorcycle" ? "C-" + Math.floor(100 + Math.random() * 900) : undefined,
     });
     space.status = "occupied";
     space.vehicleId = vid;
   });
 
-  // Add some past vehicles with payments
+  // Add past vehicles with payments
   for (let d = 0; d < 7; d++) {
     const count = 3 + Math.floor(Math.random() * 5);
     for (let j = 0; j < count; j++) {
       const type = demoTypes[Math.floor(Math.random() * 3)];
+      const rateType = rateTypes[Math.floor(Math.random() * rateTypes.length)];
       const entry = new Date(Date.now() - (d * 86400000 + Math.random() * 86400000));
       const duration = 30 + Math.floor(Math.random() * 300);
       const exit = new Date(entry.getTime() + duration * 60000);
       const vid = generateId();
-      const amount = calcFee(duration, type, config);
+      const amount = calcFee(duration, type, rateType, config);
+      const lastCharPool = type === "motorcycle" ? "ABCDEFGHIJKLMNOPQRSTUVWXYZ" : "0123456789";
       vehicles.push({
         id: vid,
-        plate: `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(100 + Math.random() * 900)}`,
+        plate: `${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(10 + Math.random() * 90)}${lastCharPool[Math.floor(Math.random() * lastCharPool.length)]}`,
         type,
+        rateType,
         entryTime: entry.toISOString(),
         exitTime: exit.toISOString(),
         spaceId: `${type}-${Math.floor(Math.random() * config.totalSpaces[type]) + 1}`,
@@ -163,11 +218,15 @@ export const seedDemoData = (config: ParkingConfig) => {
         vehicleId: vid,
         plate: vehicles[vehicles.length - 1].plate,
         amount,
+        subtotal: amount,
+        discount: 0,
         method: Math.random() > 0.5 ? "cash" : "card",
         status: "paid",
         date: exit.toISOString(),
         vehicleType: type,
+        rateType,
         duration,
+        convenio: false,
       });
     }
   }

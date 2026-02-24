@@ -5,11 +5,11 @@
 import { useState } from "react";
 import {
   LayoutDashboard, CarFront, CreditCard, ParkingSquare,
-  BarChart3, Settings, Menu, X, ShieldCheck, User,
+  BarChart3, Settings, Menu, X, ShieldCheck, User, CalendarCheck,
 } from "lucide-react";
 import { useParkingContext } from "@/contexts/ParkingContext";
 
-export type SectionId = "dashboard" | "vehicles" | "payments" | "spaces" | "reports" | "settings";
+export type SectionId = "dashboard" | "vehicles" | "payments" | "spaces" | "monthly" | "reports" | "settings";
 
 interface SidebarProps {
   active: SectionId;
@@ -21,6 +21,7 @@ const links: { id: SectionId; label: string; icon: React.ReactNode; adminOnly?: 
   { id: "vehicles", label: "Entradas / Salidas", icon: <CarFront className="w-5 h-5" /> },
   { id: "payments", label: "Pagos", icon: <CreditCard className="w-5 h-5" /> },
   { id: "spaces", label: "Espacios", icon: <ParkingSquare className="w-5 h-5" /> },
+  { id: "monthly", label: "Mensualidades", icon: <CalendarCheck className="w-5 h-5" /> },
   { id: "reports", label: "Reportes", icon: <BarChart3 className="w-5 h-5" />, adminOnly: true },
   { id: "settings", label: "Configuración", icon: <Settings className="w-5 h-5" />, adminOnly: true },
 ];

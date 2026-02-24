@@ -10,6 +10,7 @@ import Payments from "@/components/parking/Payments";
 import ParkingSpaces from "@/components/parking/ParkingSpaces";
 import Reports from "@/components/parking/Reports";
 import ParkingSettings from "@/components/parking/ParkingSettings";
+import Mensualidades from "@/components/parking/Mensualidades";
 import { useParkingContext } from "@/contexts/ParkingContext";
 import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
 
@@ -30,6 +31,7 @@ const sections: Record<SectionId, React.FC> = {
   vehicles: VehicleEntry,
   payments: Payments,
   spaces: ParkingSpaces,
+  monthly: Mensualidades,
   reports: Reports,
   settings: ParkingSettings,
 };
@@ -47,7 +49,7 @@ const ParkingDashboard = () => {
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         {/* Alert Toast */}
         {alert && (
-          <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3 rounded-xl border shadow-lg animate-scale-in ${alertBg[alert.type]}`}>
+          <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3 rounded-xl border shadow-lg animate-scale-in max-w-md ${alertBg[alert.type]}`}>
             {alertIcons[alert.type]}
             <span className="text-sm font-medium text-foreground">{alert.message}</span>
             <button onClick={clearAlert} className="ml-2 text-muted-foreground hover:text-foreground">

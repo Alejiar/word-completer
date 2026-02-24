@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, FileJson, CalendarDays } from "lucide-react";
 import { useParkingContext } from "@/contexts/ParkingContext";
-import { VEHICLE_LABELS } from "@/lib/parking-types";
+import { VEHICLE_LABELS, RATE_LABELS } from "@/lib/parking-types";
 import { formatCurrency, formatDateTime, formatDuration, exportToCSV, exportToJSON } from "@/lib/parking-utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
@@ -57,9 +57,13 @@ const Reports = () => {
         fecha: formatDateTime(p.date),
         placa: p.plate,
         tipo: VEHICLE_LABELS[p.vehicleType],
+        cobro: RATE_LABELS[p.rateType],
         duracion: formatDuration(p.duration),
         metodo: p.method === "cash" ? "Efectivo" : "Tarjeta",
+        subtotal: p.subtotal,
+        descuento: p.discount,
         monto: p.amount,
+        convenio: p.convenio ? "Sí" : "No",
       })),
       "reporte_pagos"
     );
@@ -140,6 +144,7 @@ const Reports = () => {
               <tr>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Placa</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Tipo</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Cobro</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Entrada</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Salida</th>
                 <th className="text-left py-3 px-4 text-muted-foreground font-medium">Ticket</th>
@@ -150,6 +155,7 @@ const Reports = () => {
                 <tr key={v.id} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
                   <td className="py-3 px-4 font-mono font-semibold text-foreground">{v.plate}</td>
                   <td className="py-3 px-4 text-muted-foreground">{VEHICLE_LABELS[v.type]}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{RATE_LABELS[v.rateType]}</td>
                   <td className="py-3 px-4 text-muted-foreground">{formatDateTime(v.entryTime)}</td>
                   <td className="py-3 px-4 text-muted-foreground">{v.exitTime ? formatDateTime(v.exitTime) : "-"}</td>
                   <td className="py-3 px-4 font-mono text-xs text-muted-foreground">{v.ticketCode}</td>
