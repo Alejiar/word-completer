@@ -2,11 +2,11 @@
    Dashboard Home — Overview Cards & Stats
    ────────────────────────────────────────────── */
 
-import { CarFront, Bike, Truck, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { CarFront, Bike, Truck, DollarSign, Clock, Sun, Moon, Timer } from "lucide-react";
 import { useParkingContext } from "@/contexts/ParkingContext";
 import { formatCurrency, formatDuration } from "@/lib/parking-utils";
-import { VEHICLE_LABELS } from "@/lib/parking-types";
-import type { VehicleType } from "@/lib/parking-types";
+import { VEHICLE_LABELS, RATE_LABELS } from "@/lib/parking-types";
+import type { VehicleType, RateType } from "@/lib/parking-types";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const typeIcons: Record<VehicleType, React.ReactNode> = {
@@ -15,10 +15,20 @@ const typeIcons: Record<VehicleType, React.ReactNode> = {
   truck: <Truck className="w-6 h-6" />,
 };
 
+const rateIcons: Record<RateType, React.ReactNode> = {
+  hour: <Clock className="w-5 h-5" />,
+  day: <Sun className="w-5 h-5" />,
+  night: <Moon className="w-5 h-5" />,
+  "24h": <Timer className="w-5 h-5" />,
+};
+
 const DashboardHome = () => {
-  const { vehicles, payments, spaces, config } = useParkingContext();
+  const { vehicles, payments, spaces } = useParkingContext();
 
   const parked = vehicles.filter((v) => v.status === "parked");
+  const parkedCars = parked.filter((v) => v.type === "car");
+  const parkedMotos = parked.filter((v) => v.type === "motorcycle");
+
   const todayPayments = payments.filter(
     (p) => new Date(p.date).toDateString() === new Date().toDateString()
   );
@@ -28,6 +38,12 @@ const DashboardHome = () => {
     todayPayments.length > 0
       ? Math.round(todayPayments.reduce((sum, p) => sum + p.duration, 0) / todayPayments.length)
       : 0;
+
+  // Group parked by rate type
+  const rateTypeGroups = (["hour", "day", "night", "24h"] as RateType[]).map((rt) => ({
+    rateType: rt,
+    vehicles: parked.filter((v) => v.rateType === rt),
+  }));
 
   // Occupancy by type
   const occupancyData = (["car", "motorcycle", "truck"] as VehicleType[]).map((type) => {
@@ -59,22 +75,22 @@ const DashboardHome = () => {
 
   const cards = [
     {
-      label: "Vehículos Parqueados",
-      value: parked.length,
+      label: "Carros Activos",
+      value: parkedCars.length,
       icon: <CarFront className="w-6 h-6" />,
       color: "bg-blue-500/10 text-blue-600",
+    },
+    {
+      label: "Motos Activas",
+      value: parkedMotos.length,
+      icon: <Bike className="w-6 h-6" />,
+      color: "bg-violet-500/10 text-violet-600",
     },
     {
       label: "Ingresos Hoy",
       value: formatCurrency(todayIncome),
       icon: <DollarSign className="w-6 h-6" />,
       color: "bg-emerald-500/10 text-emerald-600",
-    },
-    {
-      label: "Operaciones Hoy",
-      value: todayPayments.length,
-      icon: <TrendingUp className="w-6 h-6" />,
-      color: "bg-violet-500/10 text-violet-600",
     },
     {
       label: "Tiempo Promedio",
@@ -102,6 +118,35 @@ const DashboardHome = () => {
               <p className="text-sm text-muted-foreground">{card.label}</p>
               <p className="text-2xl font-bold text-foreground">{card.value}</p>
             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Vehicles by Rate Type */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {rateTypeGroups.map((g) => (
+          <div key={g.rateType} className="rounded-2xl bg-card border border-border p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-parking-accent/10 text-parking-accent flex items-center justify-center">
+                {rateIcons[g.rateType]}
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">{RATE_LABELS[g.rateType]}</p>
+                <p className="text-xs text-muted-foreground">{g.vehicles.length} vehículos</p>
+              </div>
+            </div>
+            {g.vehicles.length > 0 ? (
+              <div className="space-y-1 max-h-[120px] overflow-y-auto">
+                {g.vehicles.map((v) => (
+                  <div key={v.id} className="flex items-center gap-2 text-xs">
+                    <span className="font-mono font-bold text-foreground">{v.plate}</span>
+                    <span className="text-muted-foreground">{VEHICLE_LABELS[v.type]}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Sin vehículos</p>
+            )}
           </div>
         ))}
       </div>
@@ -139,7 +184,6 @@ const DashboardHome = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar chart – income */}
         <div className="rounded-2xl bg-card border border-border p-5">
           <h3 className="font-semibold text-foreground mb-4">Ingresos últimos 7 días</h3>
           <ResponsiveContainer width="100%" height={220}>
@@ -152,7 +196,6 @@ const DashboardHome = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Pie chart – space status */}
         <div className="rounded-2xl bg-card border border-border p-5">
           <h3 className="font-semibold text-foreground mb-4">Estado de Espacios</h3>
           <div className="flex items-center justify-center">
@@ -187,6 +230,7 @@ const DashboardHome = () => {
               <tr className="border-b border-border">
                 <th className="text-left py-2 px-3 text-muted-foreground font-medium">Placa</th>
                 <th className="text-left py-2 px-3 text-muted-foreground font-medium">Tipo</th>
+                <th className="text-left py-2 px-3 text-muted-foreground font-medium">Cobro</th>
                 <th className="text-left py-2 px-3 text-muted-foreground font-medium">Estado</th>
                 <th className="text-left py-2 px-3 text-muted-foreground font-medium">Espacio</th>
               </tr>
@@ -196,6 +240,7 @@ const DashboardHome = () => {
                 <tr key={v.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                   <td className="py-2.5 px-3 font-mono font-semibold text-foreground">{v.plate}</td>
                   <td className="py-2.5 px-3 text-muted-foreground">{VEHICLE_LABELS[v.type]}</td>
+                  <td className="py-2.5 px-3 text-muted-foreground">{RATE_LABELS[v.rateType]}</td>
                   <td className="py-2.5 px-3">
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                       Parqueado
@@ -208,7 +253,7 @@ const DashboardHome = () => {
               ))}
               {parked.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-muted-foreground">No hay vehículos parqueados</td>
+                  <td colSpan={5} className="py-8 text-center text-muted-foreground">No hay vehículos parqueados</td>
                 </tr>
               )}
             </tbody>
