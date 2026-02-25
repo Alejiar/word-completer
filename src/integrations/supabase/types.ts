@@ -14,7 +14,316 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      configuracion: {
+        Row: {
+          clave: string
+          descripcion: string | null
+          id: string
+          updated_at: string | null
+          valor: string
+        }
+        Insert: {
+          clave: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string | null
+          valor: string
+        }
+        Update: {
+          clave?: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string | null
+          valor?: string
+        }
+        Relationships: []
+      }
+      ingresos: {
+        Row: {
+          created_at: string | null
+          espacio: string
+          estado: string
+          fecha_entrada: string
+          id: string
+          numero_casco: string | null
+          placa: string
+          ticket_code: string
+          tipo_cobro: string
+          tipo_vehiculo: string
+        }
+        Insert: {
+          created_at?: string | null
+          espacio: string
+          estado?: string
+          fecha_entrada?: string
+          id?: string
+          numero_casco?: string | null
+          placa: string
+          ticket_code: string
+          tipo_cobro?: string
+          tipo_vehiculo: string
+        }
+        Update: {
+          created_at?: string | null
+          espacio?: string
+          estado?: string
+          fecha_entrada?: string
+          id?: string
+          numero_casco?: string | null
+          placa?: string
+          ticket_code?: string
+          tipo_cobro?: string
+          tipo_vehiculo?: string
+        }
+        Relationships: []
+      }
+      mensualidad_pagos: {
+        Row: {
+          anio_pagado: number
+          created_at: string | null
+          fecha_pago: string
+          id: string
+          mensualidad_id: string
+          mes_pagado: number
+          monto: number
+        }
+        Insert: {
+          anio_pagado: number
+          created_at?: string | null
+          fecha_pago?: string
+          id?: string
+          mensualidad_id: string
+          mes_pagado: number
+          monto: number
+        }
+        Update: {
+          anio_pagado?: number
+          created_at?: string | null
+          fecha_pago?: string
+          id?: string
+          mensualidad_id?: string
+          mes_pagado?: number
+          monto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensualidad_pagos_mensualidad_id_fkey"
+            columns: ["mensualidad_id"]
+            isOneToOne: false
+            referencedRelation: "mensualidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensualidades: {
+        Row: {
+          created_at: string | null
+          dia_corte: number
+          estado: string
+          fecha_inicio: string
+          id: string
+          nombre_cliente: string
+          placa: string
+          precio: number
+          telefono: string | null
+          tipo_vehiculo: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dia_corte?: number
+          estado?: string
+          fecha_inicio: string
+          id?: string
+          nombre_cliente: string
+          placa: string
+          precio?: number
+          telefono?: string | null
+          tipo_vehiculo: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dia_corte?: number
+          estado?: string
+          fecha_inicio?: string
+          id?: string
+          nombre_cliente?: string
+          placa?: string
+          precio?: number
+          telefono?: string | null
+          tipo_vehiculo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pagos: {
+        Row: {
+          convenio: boolean
+          created_at: string | null
+          descuento: number
+          estado: string
+          fecha_pago: string
+          id: string
+          mensualidad_pago_id: string | null
+          metodo_pago: string
+          placa: string
+          salida_id: string | null
+          subtotal: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          total: number
+        }
+        Insert: {
+          convenio?: boolean
+          created_at?: string | null
+          descuento?: number
+          estado?: string
+          fecha_pago?: string
+          id?: string
+          mensualidad_pago_id?: string | null
+          metodo_pago?: string
+          placa: string
+          salida_id?: string | null
+          subtotal?: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          total?: number
+        }
+        Update: {
+          convenio?: boolean
+          created_at?: string | null
+          descuento?: number
+          estado?: string
+          fecha_pago?: string
+          id?: string
+          mensualidad_pago_id?: string | null
+          metodo_pago?: string
+          placa?: string
+          salida_id?: string | null
+          subtotal?: number
+          tipo_cobro?: string
+          tipo_vehiculo?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_mensualidad_pago"
+            columns: ["mensualidad_pago_id"]
+            isOneToOne: false
+            referencedRelation: "mensualidad_pagos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_salida_id_fkey"
+            columns: ["salida_id"]
+            isOneToOne: false
+            referencedRelation: "salidas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salidas: {
+        Row: {
+          convenio: boolean
+          created_at: string | null
+          descuento: number
+          duracion_minutos: number
+          fecha_entrada: string
+          fecha_salida: string
+          id: string
+          ingreso_id: string
+          placa: string
+          subtotal: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          total: number
+        }
+        Insert: {
+          convenio?: boolean
+          created_at?: string | null
+          descuento?: number
+          duracion_minutos?: number
+          fecha_entrada: string
+          fecha_salida?: string
+          id?: string
+          ingreso_id: string
+          placa: string
+          subtotal?: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          total?: number
+        }
+        Update: {
+          convenio?: boolean
+          created_at?: string | null
+          descuento?: number
+          duracion_minutos?: number
+          fecha_entrada?: string
+          fecha_salida?: string
+          id?: string
+          ingreso_id?: string
+          placa?: string
+          subtotal?: number
+          tipo_cobro?: string
+          tipo_vehiculo?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salidas_ingreso_id_fkey"
+            columns: ["ingreso_id"]
+            isOneToOne: false
+            referencedRelation: "ingresos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarifas: {
+        Row: {
+          id: string
+          precio: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          precio?: number
+          tipo_cobro: string
+          tipo_vehiculo: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          precio?: number
+          tipo_cobro?: string
+          tipo_vehiculo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vehiculos: {
+        Row: {
+          created_at: string | null
+          id: string
+          placa: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          placa: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          placa?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
