@@ -92,7 +92,6 @@ const Payments = () => {
           <option value="all">Todos los tipos</option>
           <option value="car">Carro</option>
           <option value="motorcycle">Moto</option>
-          <option value="truck">Camioneta</option>
         </select>
       </div>
 
@@ -138,9 +137,7 @@ const Payments = () => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">No se encontraron pagos</td>
-                </tr>
+                <tr><td colSpan={7} className="py-12 text-center text-muted-foreground">No se encontraron pagos</td></tr>
               )}
             </tbody>
           </table>

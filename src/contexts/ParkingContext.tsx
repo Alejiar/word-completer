@@ -5,7 +5,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type {
   Vehicle, Payment, ParkingSpace, ParkingConfig, UserRole,
-  VehicleType, PaymentMethod, RateType, MonthlySubscription, MonthlyPayment,
+  PaymentMethod, RateType, MonthlySubscription, MonthlyPayment,
 } from "@/lib/parking-types";
 import { DEFAULT_CONFIG } from "@/lib/parking-types";
 import {
@@ -22,8 +22,8 @@ interface ParkingContextType {
   monthlySubs: MonthlySubscription[];
   setRole: (r: UserRole) => void;
   updateConfig: (c: Partial<ParkingConfig>) => void;
-  registerEntry: (plate: string, type: VehicleType, rateType: RateType, convenio: boolean, helmetNumber?: string) => Vehicle | null;
-  registerExit: (vehicleId: string, method: PaymentMethod) => Payment | null;
+  registerEntry: (plate: string, rateType: RateType, helmetNumber?: string) => Vehicle | null;
+  registerExit: (vehicleId: string, method: PaymentMethod, convenio: boolean) => Payment | null;
   toggleSpaceBlock: (spaceId: string) => void;
   reserveSpace: (spaceId: string) => void;
   unreserveSpace: (spaceId: string) => void;
@@ -31,6 +31,7 @@ interface ParkingContextType {
   payMonthlySub: (subId: string) => void;
   deleteMonthlySub: (subId: string) => void;
   isMonthlyVehicle: (plate: string) => boolean;
+  isMonthlyActive: (plate: string) => boolean;
   alert: { message: string; type: "success" | "error" | "info" } | null;
   clearAlert: () => void;
 }
@@ -69,15 +70,14 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Seed demo data on first load
   useEffect(() => {
-    const seeded = localStorage.getItem(`${STORAGE_KEY}_seeded_v2`);
+    const seeded = localStorage.getItem(`${STORAGE_KEY}_seeded_v3`);
     if (!seeded) {
       const demo = seedDemoData(config);
       setVehicles(demo.vehicles);
       setPayments(demo.payments);
       setSpaces(demo.spaces);
-      localStorage.setItem(`${STORAGE_KEY}_seeded_v2`, "1");
+      localStorage.setItem(`${STORAGE_KEY}_seeded_v3`, "1");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check monthly subscription statuses
@@ -121,21 +121,26 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return monthlySubs.some((s) => s.plate.toUpperCase() === plate.toUpperCase());
   }, [monthlySubs]);
 
+  const isMonthlyActive = useCallback((plate: string): boolean => {
+    return monthlySubs.some((s) => s.plate.toUpperCase() === plate.toUpperCase() && s.status === "active");
+  }, [monthlySubs]);
+
   const registerEntry = useCallback((
-    plate: string, type: VehicleType, rateType: RateType, convenio: boolean, helmetNumber?: string
+    plate: string, rateType: RateType, helmetNumber?: string
   ): Vehicle | null => {
     const normalized = plate.toUpperCase().trim();
 
-    // Validate plate
-    const validation = validatePlate(normalized, type);
+    // Validate plate & auto-detect type
+    const validation = validatePlate(normalized);
     if (!validation.valid) {
       showAlert(validation.error!, "error");
       return null;
     }
+    const type = validation.type!;
 
-    // Check if monthly vehicle
-    if (isMonthlyVehicle(normalized)) {
-      showAlert(`⚠️ Este vehículo (${normalized}) es mensualidad. No se registra desde aquí.`, "error");
+    // Check if monthly vehicle with active status
+    if (isMonthlyActive(normalized)) {
+      showAlert(`⚠️ Vehículo ${normalized} tiene mensualidad ACTIVA. No se registra ingreso por horas.`, "error");
       return null;
     }
 
@@ -152,7 +157,7 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     const freeSpace = spaces.find((s) => s.type === type && s.status === "free");
     if (!freeSpace) {
-      showAlert(`No hay espacios disponibles para ${type}`, "error");
+      showAlert(`No hay espacios disponibles para ${type === "car" ? "carros" : "motos"}`, "error");
       return null;
     }
     const vehicle: Vehicle = {
@@ -164,7 +169,6 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       spaceId: freeSpace.id,
       status: "parked",
       ticketCode: generateTicketCode(),
-      convenio,
       helmetNumber: type === "motorcycle" ? helmetNumber?.trim() : undefined,
     };
     setVehicles((prev) => [vehicle, ...prev]);
@@ -173,11 +177,12 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         s.id === freeSpace.id ? { ...s, status: "occupied" as const, vehicleId: vehicle.id } : s
       )
     );
-    showAlert(`Vehículo ${normalized} registrado en espacio ${freeSpace.label}`, "success");
+    showAlert(`Vehículo ${normalized} (${type === "car" ? "Carro" : "Moto"}) registrado en espacio ${freeSpace.label}`, "success");
     return vehicle;
-  }, [vehicles, spaces, isMonthlyVehicle]);
+  }, [vehicles, spaces, isMonthlyActive]);
 
-  const registerExit = useCallback((vehicleId: string, method: PaymentMethod): Payment | null => {
+  /** Register exit — convenio is applied HERE, not at entry */
+  const registerExit = useCallback((vehicleId: string, method: PaymentMethod, convenio: boolean): Payment | null => {
     const vehicle = vehicles.find((v) => v.id === vehicleId && v.status === "parked");
     if (!vehicle) {
       showAlert("Vehículo no encontrado", "error");
@@ -186,7 +191,7 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const exitTime = new Date().toISOString();
     const duration = calcDuration(vehicle.entryTime, exitTime);
     const subtotal = calcFee(duration, vehicle.type, vehicle.rateType, config, false);
-    const amount = calcFee(duration, vehicle.type, vehicle.rateType, config, vehicle.convenio ?? false);
+    const amount = calcFee(duration, vehicle.type, vehicle.rateType, config, convenio);
     const discount = subtotal - amount;
     const payment: Payment = {
       id: generateId(),
@@ -201,12 +206,12 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       vehicleType: vehicle.type,
       rateType: vehicle.rateType,
       duration,
-      convenio: vehicle.convenio ?? false,
+      convenio,
     };
 
     setVehicles((prev) =>
       prev.map((v) =>
-        v.id === vehicleId ? { ...v, exitTime, status: "exited" as const } : v
+        v.id === vehicleId ? { ...v, exitTime, status: "exited" as const, convenio } : v
       )
     );
     setSpaces((prev) =>
@@ -215,7 +220,7 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       )
     );
     setPayments((prev) => [payment, ...prev]);
-    const msg = vehicle.convenio
+    const msg = convenio
       ? `Salida registrada. Subtotal: $${subtotal.toLocaleString("es-CO")} | Descuento convenio: -$${discount.toLocaleString("es-CO")} | Total: $${amount.toLocaleString("es-CO")}`
       : `Salida registrada. Total: $${amount.toLocaleString("es-CO")}`;
     showAlert(msg, "success");
@@ -265,7 +270,7 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const payment: MonthlyPayment = {
       id: generateId(),
       date: now.toISOString(),
-      amount: 0, // will be set from sub price
+      amount: 0,
       month: now.getMonth() + 1,
       year: now.getFullYear(),
     };
@@ -293,7 +298,7 @@ export const ParkingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         vehicles, payments, spaces, config, role, monthlySubs,
         setRole, updateConfig, registerEntry, registerExit,
         toggleSpaceBlock, reserveSpace, unreserveSpace,
-        addMonthlySub, payMonthlySub, deleteMonthlySub, isMonthlyVehicle,
+        addMonthlySub, payMonthlySub, deleteMonthlySub, isMonthlyVehicle, isMonthlyActive,
         alert, clearAlert,
       }}
     >

@@ -15,7 +15,6 @@ const Reports = () => {
   const { vehicles, payments } = useParkingContext();
   const [period, setPeriod] = useState<Period>("daily");
 
-  // Income chart data
   const getChartData = () => {
     const now = new Date();
     if (period === "daily") {
@@ -47,8 +46,6 @@ const Reports = () => {
 
   const chartData = getChartData();
   const totalInPeriod = chartData.reduce((s, d) => s + d.total, 0);
-
-  // Vehicle history
   const exitedVehicles = vehicles.filter((v) => v.status === "exited").slice(0, 50);
 
   const handleExportCSV = () => {
@@ -87,7 +84,6 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Period selector */}
       <div className="flex gap-2">
         {([["daily", "Hoy"], ["weekly", "Semanal"], ["monthly", "Mensual"]] as [Period, string][]).map(([p, label]) => (
           <button
@@ -104,7 +100,6 @@ const Reports = () => {
         ))}
       </div>
 
-      {/* Income Chart */}
       <div className="rounded-2xl bg-card border border-border p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -132,7 +127,6 @@ const Reports = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* Vehicle History */}
       <div className="rounded-2xl bg-card border border-border p-5">
         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
           <Download className="w-5 h-5 text-parking-accent" />

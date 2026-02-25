@@ -2,7 +2,7 @@
    Dashboard Home — Overview Cards & Stats
    ────────────────────────────────────────────── */
 
-import { CarFront, Bike, Truck, DollarSign, Clock, Sun, Moon, Timer } from "lucide-react";
+import { CarFront, Bike, DollarSign, Clock, Sun, Moon, Timer } from "lucide-react";
 import { useParkingContext } from "@/contexts/ParkingContext";
 import { formatCurrency, formatDuration } from "@/lib/parking-utils";
 import { VEHICLE_LABELS, RATE_LABELS } from "@/lib/parking-types";
@@ -12,7 +12,6 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const typeIcons: Record<VehicleType, React.ReactNode> = {
   car: <CarFront className="w-6 h-6" />,
   motorcycle: <Bike className="w-6 h-6" />,
-  truck: <Truck className="w-6 h-6" />,
 };
 
 const rateIcons: Record<RateType, React.ReactNode> = {
@@ -46,10 +45,10 @@ const DashboardHome = () => {
   }));
 
   // Occupancy by type
-  const occupancyData = (["car", "motorcycle", "truck"] as VehicleType[]).map((type) => {
+  const occupancyData = (["car", "motorcycle"] as VehicleType[]).map((type) => {
     const total = spaces.filter((s) => s.type === type).length;
     const occupied = spaces.filter((s) => s.type === type && s.status === "occupied").length;
-    return { name: VEHICLE_LABELS[type], total, occupied, free: total - occupied };
+    return { name: VEHICLE_LABELS[type], total, occupied, free: total - occupied, type };
   });
 
   // Income last 7 days
@@ -59,10 +58,7 @@ const DashboardHome = () => {
     const key = d.toDateString();
     const dayPayments = payments.filter((p) => new Date(p.date).toDateString() === key);
     const total = dayPayments.reduce((s, p) => s + p.amount, 0);
-    return {
-      day: d.toLocaleDateString("es-CO", { weekday: "short" }),
-      total,
-    };
+    return { day: d.toLocaleDateString("es-CO", { weekday: "short" }), total };
   });
 
   // Pie chart for space status
@@ -74,30 +70,10 @@ const DashboardHome = () => {
   ].filter((s) => s.value > 0);
 
   const cards = [
-    {
-      label: "Carros Activos",
-      value: parkedCars.length,
-      icon: <CarFront className="w-6 h-6" />,
-      color: "bg-blue-500/10 text-blue-600",
-    },
-    {
-      label: "Motos Activas",
-      value: parkedMotos.length,
-      icon: <Bike className="w-6 h-6" />,
-      color: "bg-violet-500/10 text-violet-600",
-    },
-    {
-      label: "Ingresos Hoy",
-      value: formatCurrency(todayIncome),
-      icon: <DollarSign className="w-6 h-6" />,
-      color: "bg-emerald-500/10 text-emerald-600",
-    },
-    {
-      label: "Tiempo Promedio",
-      value: formatDuration(avgDuration),
-      icon: <Clock className="w-6 h-6" />,
-      color: "bg-amber-500/10 text-amber-600",
-    },
+    { label: "Carros Activos", value: parkedCars.length, icon: <CarFront className="w-6 h-6" />, color: "bg-blue-500/10 text-blue-600" },
+    { label: "Motos Activas", value: parkedMotos.length, icon: <Bike className="w-6 h-6" />, color: "bg-violet-500/10 text-violet-600" },
+    { label: "Ingresos Hoy", value: formatCurrency(todayIncome), icon: <DollarSign className="w-6 h-6" />, color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "Tiempo Promedio", value: formatDuration(avgDuration), icon: <Clock className="w-6 h-6" />, color: "bg-amber-500/10 text-amber-600" },
   ];
 
   return (
@@ -107,13 +83,8 @@ const DashboardHome = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl bg-card border border-border p-5 flex items-start gap-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-          >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.color}`}>
-              {card.icon}
-            </div>
+          <div key={card.label} className="rounded-2xl bg-card border border-border p-5 flex items-start gap-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.color}`}>{card.icon}</div>
             <div>
               <p className="text-sm text-muted-foreground">{card.label}</p>
               <p className="text-2xl font-bold text-foreground">{card.value}</p>
@@ -152,15 +123,14 @@ const DashboardHome = () => {
       </div>
 
       {/* Occupancy by type */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {occupancyData.map((d) => {
           const pct = d.total > 0 ? Math.round((d.occupied / d.total) * 100) : 0;
-          const type = d.name === "Carro" ? "car" : d.name === "Moto" ? "motorcycle" : "truck";
           return (
             <div key={d.name} className="rounded-2xl bg-card border border-border p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-parking-accent/10 text-parking-accent flex items-center justify-center">
-                  {typeIcons[type]}
+                  {typeIcons[d.type]}
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">{d.name}</p>
@@ -170,10 +140,7 @@ const DashboardHome = () => {
               <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: pct > 80 ? "#ef4444" : pct > 50 ? "#eab308" : "#22c55e",
-                  }}
+                  style={{ width: `${pct}%`, backgroundColor: pct > 80 ? "#ef4444" : pct > 50 ? "#eab308" : "#22c55e" }}
                 />
               </div>
               <p className="text-right text-xs text-muted-foreground mt-1">{pct}%</p>
@@ -195,7 +162,6 @@ const DashboardHome = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
         <div className="rounded-2xl bg-card border border-border p-5">
           <h3 className="font-semibold text-foreground mb-4">Estado de Espacios</h3>
           <div className="flex items-center justify-center">
@@ -242,19 +208,13 @@ const DashboardHome = () => {
                   <td className="py-2.5 px-3 text-muted-foreground">{VEHICLE_LABELS[v.type]}</td>
                   <td className="py-2.5 px-3 text-muted-foreground">{RATE_LABELS[v.rateType]}</td>
                   <td className="py-2.5 px-3">
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                      Parqueado
-                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Parqueado</span>
                   </td>
-                  <td className="py-2.5 px-3 text-muted-foreground">
-                    {spaces.find((s) => s.id === v.spaceId)?.label ?? v.spaceId}
-                  </td>
+                  <td className="py-2.5 px-3 text-muted-foreground">{spaces.find((s) => s.id === v.spaceId)?.label ?? v.spaceId}</td>
                 </tr>
               ))}
               {parked.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-muted-foreground">No hay vehículos parqueados</td>
-                </tr>
+                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No hay vehículos parqueados</td></tr>
               )}
             </tbody>
           </table>
