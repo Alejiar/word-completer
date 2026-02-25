@@ -1,5 +1,7 @@
 /* ──────────────────────────────────────────────
    Settings / Configuration
+   - Receipts with dirección, teléfono
+   - Only carro/moto (no truck)
    ────────────────────────────────────────────── */
 
 import { useState } from "react";
@@ -52,11 +54,31 @@ const ParkingSettings = () => {
     <div className="rounded-xl border border-border p-4 space-y-3">
       <h4 className="font-semibold text-foreground text-sm">{label}</h4>
       <div>
-        <label className="text-xs font-medium text-muted-foreground block mb-1">Encabezado</label>
+        <label className="text-xs font-medium text-muted-foreground block mb-1">Nombre / Encabezado</label>
         <input
           type="text"
           value={receipt.headerText}
           onChange={(e) => onChange({ ...receipt, headerText: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-parking-accent/50"
+        />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground block mb-1">Dirección</label>
+        <input
+          type="text"
+          value={receipt.direccion}
+          onChange={(e) => onChange({ ...receipt, direccion: e.target.value })}
+          placeholder="Calle 123 #45-67"
+          className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-parking-accent/50"
+        />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground block mb-1">Teléfono</label>
+        <input
+          type="text"
+          value={receipt.telefono}
+          onChange={(e) => onChange({ ...receipt, telefono: e.target.value })}
+          placeholder="3001234567"
           className="w-full px-3 py-2 rounded-lg bg-background border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-parking-accent/50"
         />
       </div>
@@ -83,7 +105,7 @@ const ParkingSettings = () => {
             <img
               src={receipt.logoUrl}
               alt="Logo preview"
-              className="max-h-12 max-w-full object-contain"
+              className="max-h-12 max-w-full object-contain mx-auto"
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           </div>
@@ -126,7 +148,6 @@ const ParkingSettings = () => {
 
       {activeTab === "general" && (
         <>
-          {/* General */}
           <div className="rounded-2xl bg-card border border-border p-6">
             <div className="flex items-center gap-2 mb-5">
               <SettingsIcon className="w-5 h-5 text-parking-accent" />
@@ -161,14 +182,13 @@ const ParkingSettings = () => {
             </div>
           </div>
 
-          {/* Spaces info */}
           <div className="rounded-2xl bg-card border border-border p-6">
             <div className="flex items-center gap-2 mb-5">
               <ParkingSquare className="w-5 h-5 text-parking-accent" />
               <h3 className="font-semibold text-foreground text-lg">Espacios Configurados</h3>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              {(["car", "motorcycle", "truck"] as VehicleType[]).map((type) => (
+            <div className="grid grid-cols-2 gap-4">
+              {(["car", "motorcycle"] as VehicleType[]).map((type) => (
                 <div key={type} className="text-center p-4 rounded-xl bg-muted/50">
                   <p className="text-2xl font-bold text-foreground">{config.totalSpaces[type]}</p>
                   <p className="text-xs text-muted-foreground">{VEHICLE_LABELS[type]}s</p>
@@ -186,7 +206,7 @@ const ParkingSettings = () => {
             <h3 className="font-semibold text-foreground text-lg">Tarifas</h3>
           </div>
           <div className="space-y-6">
-            {(["car", "motorcycle", "truck"] as VehicleType[]).map((vType) => (
+            {(["car", "motorcycle"] as VehicleType[]).map((vType) => (
               <div key={vType} className="rounded-xl border border-border p-4">
                 <h4 className="font-semibold text-foreground mb-3">{VEHICLE_LABELS[vType]}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

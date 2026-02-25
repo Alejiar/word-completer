@@ -2,7 +2,7 @@
    Parking Management System — Type Definitions
    ────────────────────────────────────────────── */
 
-export type VehicleType = "car" | "motorcycle" | "truck";
+export type VehicleType = "car" | "motorcycle";
 export type RateType = "hour" | "day" | "night" | "24h";
 export type SpaceStatus = "free" | "occupied" | "blocked" | "reserved";
 export type PaymentMethod = "cash" | "card";
@@ -20,7 +20,7 @@ export interface Vehicle {
   status: "parked" | "exited";
   ticketCode: string;
   convenio?: boolean;
-  helmetNumber?: string; // solo motos
+  helmetNumber?: string;
 }
 
 export interface Payment {
@@ -35,7 +35,7 @@ export interface Payment {
   date: string;
   vehicleType: VehicleType;
   rateType: RateType;
-  duration: number; // minutes
+  duration: number;
   convenio: boolean;
 }
 
@@ -47,14 +47,15 @@ export interface ParkingSpace {
   vehicleId?: string;
 }
 
-/** Rates per vehicle type and rate type */
 export type RatesConfig = Record<VehicleType, Record<RateType | "monthly", number>>;
 
 export interface ReceiptConfig {
   headerText: string;
   footerText: string;
   logoUrl: string;
-  widthMm: number; // 58, 80, etc.
+  widthMm: number;
+  direccion: string;
+  telefono: string;
 }
 
 export interface ParkingConfig {
@@ -62,7 +63,7 @@ export interface ParkingConfig {
   totalSpaces: Record<VehicleType, number>;
   currency: string;
   name: string;
-  gracePeriod: number; // minutes
+  gracePeriod: number;
   receiptEntry: ReceiptConfig;
   receiptExit: ReceiptConfig;
   receiptMonthly: ReceiptConfig;
@@ -72,9 +73,10 @@ export interface MonthlySubscription {
   id: string;
   plate: string;
   clientName: string;
+  telefono: string;
   vehicleType: VehicleType;
   startDate: string;
-  cutDay: number; // 1-31
+  cutDay: number;
   price: number;
   status: "active" | "pending";
   payments: MonthlyPayment[];
@@ -84,7 +86,7 @@ export interface MonthlyPayment {
   id: string;
   date: string;
   amount: number;
-  month: number; // 1-12
+  month: number;
   year: number;
 }
 
@@ -100,7 +102,6 @@ export interface ParkingState {
 export const VEHICLE_LABELS: Record<VehicleType, string> = {
   car: "Carro",
   motorcycle: "Moto",
-  truck: "Camioneta",
 };
 
 export const RATE_LABELS: Record<RateType, string> = {
@@ -121,16 +122,17 @@ const defaultReceiptConfig: ReceiptConfig = {
   headerText: "ParkSystem Pro",
   footerText: "Gracias por su visita",
   logoUrl: "",
-  widthMm: 80,
+  widthMm: 58,
+  direccion: "Calle 123 #45-67",
+  telefono: "3001234567",
 };
 
 export const DEFAULT_CONFIG: ParkingConfig = {
   rates: {
     car: { hour: 5000, day: 25000, night: 15000, "24h": 35000, monthly: 250000 },
     motorcycle: { hour: 3000, day: 15000, night: 10000, "24h": 20000, monthly: 150000 },
-    truck: { hour: 8000, day: 40000, night: 25000, "24h": 50000, monthly: 400000 },
   },
-  totalSpaces: { car: 20, motorcycle: 10, truck: 5 },
+  totalSpaces: { car: 20, motorcycle: 10 },
   currency: "COP",
   name: "ParkSystem Pro",
   gracePeriod: 5,

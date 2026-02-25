@@ -1,0 +1,186 @@
+=====================================
+ ParkSystem Pro — Guía de Migración
+ Compatible con XAMPP + MySQL + phpMyAdmin
+=====================================
+
+REQUISITOS PREVIOS:
+- XAMPP instalado (https://www.apachefriends.org/)
+- Apache y MySQL activos en el panel de control de XAMPP
+- Node.js instalado (https://nodejs.org/) para el frontend
+
+=====================================
+PASO 1: Instalar XAMPP
+=====================================
+
+1. Descargar XAMPP desde: https://www.apachefriends.org/
+2. Instalar con las opciones por defecto
+3. Abrir XAMPP Control Panel
+4. Hacer clic en "Start" en Apache
+5. Hacer clic en "Start" en MySQL
+
+Verificar que ambos servicios estén corriendo (luz verde).
+
+=====================================
+PASO 2: Importar Base de Datos
+=====================================
+
+1. Abrir navegador web
+2. Ir a: http://localhost/phpmyadmin
+
+3. Crear la base de datos:
+   a. En phpMyAdmin, clic en "Nueva" (panel izquierdo)
+   b. Nombre: parksystem_pro
+   c. Cotejamiento: utf8mb4_unicode_ci
+   d. Clic en "Crear"
+
+4. Importar schema.sql:
+   a. Seleccionar la base de datos "parksystem_pro" (panel izquierdo)
+   b. Clic en la pestaña "Importar" (arriba)
+   c. Clic en "Seleccionar archivo"
+   d. Buscar y seleccionar: database/schema.sql
+   e. Clic en "Continuar" o "Go"
+   f. Debe aparecer: "La importación se realizó exitosamente"
+
+5. Importar seed.sql (datos iniciales):
+   a. Con "parksystem_pro" seleccionada
+   b. Clic en "Importar"
+   c. Seleccionar: database/seed.sql
+   d. Clic en "Continuar"
+
+=====================================
+PASO 3: Verificar tablas creadas
+=====================================
+
+En phpMyAdmin, expandir "parksystem_pro" y verificar:
+
+  ✓ configuracion    → Configuración general
+  ✓ tarifas          → Precios por tipo vehículo y cobro
+  ✓ vehiculos        → Registro maestro de vehículos
+  ✓ ingresos         → Entradas de vehículos
+  ✓ salidas          → Salidas con cálculo de tarifa
+  ✓ pagos            → Todos los pagos registrados
+  ✓ mensualidades    → Suscripciones mensuales
+  ✓ mensualidad_pagos → Historial de pagos mensuales
+
+=====================================
+PASO 4: Configurar Backend (Futuro)
+=====================================
+
+Cuando se implemente un backend PHP o Node.js:
+
+Conexión MySQL para XAMPP:
+  host: localhost
+  user: root
+  password: (vacío por defecto en XAMPP)
+  database: parksystem_pro
+  port: 3306
+
+Ejemplo conexión PHP (config/database.php):
+
+  <?php
+  $host = 'localhost';
+  $dbname = 'parksystem_pro';
+  $username = 'root';
+  $password = '';
+  
+  $pdo = new PDO(
+      "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+      $username, $password,
+      [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+  );
+  ?>
+
+Ejemplo conexión Node.js (backend/config/db.js):
+
+  const mysql = require('mysql2');
+  const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'parksystem_pro',
+    waitForConnections: true,
+    connectionLimit: 10,
+  });
+  module.exports = pool.promise();
+
+=====================================
+PASO 5: Ejecutar Frontend
+=====================================
+
+1. Abrir terminal/CMD en la carpeta del proyecto
+
+2. Instalar dependencias:
+   npm install
+
+3. Iniciar en modo desarrollo:
+   npm run dev
+
+4. Abrir en navegador:
+   http://localhost:5173
+
+=====================================
+PASO 6: Compilar para Producción
+=====================================
+
+1. Compilar el frontend:
+   npm run build
+
+2. La carpeta "dist" contiene los archivos estáticos
+
+3. Copiar contenido de "dist" a:
+   C:\xampp\htdocs\parksystem\
+
+4. Acceder desde:
+   http://localhost/parksystem
+
+=====================================
+ESTRUCTURA DEL PROYECTO
+=====================================
+
+/database
+  ├── schema.sql          → Estructura de tablas
+  └── seed.sql            → Datos iniciales
+
+/docs
+  └── MIGRAR_A_XAMPP.txt  → Este archivo
+
+/src                      → Código fuente React
+  ├── components/parking/ → Componentes del sistema
+  ├── contexts/           → Estado global
+  ├── lib/                → Tipos y utilidades
+  └── pages/              → Páginas principales
+
+=====================================
+NOTAS IMPORTANTES
+=====================================
+
+- La contraseña de MySQL en XAMPP por defecto está vacía
+- El charset es utf8mb4 para soporte completo de caracteres
+- Hacer backup periódico: phpMyAdmin > Exportar > SQL
+- Para producción, CAMBIAR las credenciales por defecto
+- El sistema actualmente usa localStorage como respaldo
+  hasta que se conecte con un backend real
+
+=====================================
+DETECCIÓN AUTOMÁTICA DE VEHÍCULOS
+=====================================
+
+El sistema detecta automáticamente el tipo de vehículo
+basándose en el último carácter de la placa:
+
+  - Termina en NÚMERO → CARRO (ej: ABC123)
+  - Termina en LETRA  → MOTO  (ej: HOQ79C)
+
+No es necesario seleccionar manualmente el tipo.
+
+=====================================
+SOPORTE
+=====================================
+
+Si tiene problemas:
+1. Verificar que Apache y MySQL están activos en XAMPP
+2. Revisar los logs: C:\xampp\mysql\data\*.err
+3. Asegurar que el puerto 3306 no está ocupado
+4. Probar conexión en phpMyAdmin
+
+=====================================
